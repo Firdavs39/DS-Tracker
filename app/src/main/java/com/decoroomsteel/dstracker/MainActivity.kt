@@ -1,47 +1,39 @@
 package com.decoroomsteel.dstracker
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.decoroomsteel.dstracker.ui.theme.DSTrackerTheme
+import androidx.appcompat.app.AppCompatActivity
+import com.decoroomsteel.dstracker.ui.auth.LoginActivity
+import com.google.firebase.auth.FirebaseAuth
 
-class MainActivity : ComponentActivity() {
+/**
+ * Главный экран приложения, который проверяет состояние авторизации
+ * и направляет пользователя либо на экран входа, либо на соответствующую панель управления
+ */
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            DSTrackerTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+
+        // Инициализация Firebase Auth
+        auth = FirebaseAuth.getInstance()
+
+        // Проверяем, авторизован ли пользователь
+        val currentUser = auth.currentUser
+
+        if (currentUser != null) {
+            // Если пользователь уже авторизован, ему не нужно повторно входить
+            // Перенаправляем на экран LoginActivity, который дальше определит роль
+            // и направит на соответствующую панель (админ или работник)
+            startActivity(Intent(this, LoginActivity::class.java))
+        } else {
+            // Если пользователь не авторизован, направляем на экран входа
+            startActivity(Intent(this, LoginActivity::class.java))
         }
-    }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DSTrackerTheme {
-        Greeting("Android")
+        // Закрываем MainActivity, чтобы пользователь не мог вернуться назад кнопкой "Назад"
+        finish()
     }
 }
