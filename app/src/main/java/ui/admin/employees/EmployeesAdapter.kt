@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.decoroomsteel.dstracker.databinding.ItemEmployeeBinding
-import com.decoroomsteel.dstracker.model.User
+import com.decoroomsteel.dstracker.data.model.User
 
 /**
  * Адаптер для отображения списка сотрудников с возможностью редактирования и удаления
@@ -55,4 +55,4 @@ class EmployeesAdapter(
             }
         }
     }
-} 
+}
