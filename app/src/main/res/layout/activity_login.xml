@@ -7,13 +7,16 @@
     android:padding="16dp"
     tools:context=".ui.auth.LoginActivity">
 
-    <ImageView
-        android:id="@+id/ivLogo"
-        android:layout_width="200dp"
-        android:layout_height="80dp"
+    <!-- Заменяем ImageView на TextView с названием компании -->
+    <TextView
+        android:id="@+id/tvLogoTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="48dp"
-        android:contentDescription="@string/app_name"
-        android:src="@drawable/logo_decoroom"
+        android:text="Decoroom Steel"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#3F51B5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -28,7 +31,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivLogo" />
+        app:layout_constraintTop_toBottomOf="@id/tvLogoTitle" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilEmail"
