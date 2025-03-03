@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "492486177319",
+    "project_id": "ds-tracker-111d6",
+    "storage_bucket": "ds-tracker-111d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492486177319:android:77cbd869af68b9cb639402",
+        "android_client_info": {
+          "package_name": "com.decoroomsteel.dstracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLX2tpzUh_LwPPIRG735pRy9FZ8YRexjs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
