@@ -1,4 +1,4 @@
-package com.decoroomsteel.dstracker.ui.admin
+package ui.admin
 
 import android.content.Intent
 import android.os.Bundle
@@ -10,22 +10,20 @@ import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import com.decoroomsteel.dstracker.R
-import com.decoroomsteel.dstracker.databinding.ActivityAdminDashboardBinding
-import com.decoroomsteel.dstracker.ui.admin.employees.EmployeesFragment
-import com.decoroomsteel.dstracker.ui.admin.locations.LocationsFragment
-import com.decoroomsteel.dstracker.ui.admin.reports.ReportsFragment
-import com.decoroomsteel.dstracker.ui.admin.sessions.SessionsFragment
-import com.decoroomsteel.dstracker.ui.auth.LoginActivity
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
+import ui.admin.employees.EmployeesFragment
+import ui.admin.locations.LocationsFragment
+import ui.admin.reports.ReportsFragment
+import ui.admin.sessions.SessionsFragment
+import ui.auth.LoginActivity
 
 /**
  * Основной экран администратора с вкладками для управления сотрудниками, локациями и сменами
  */
 class AdminDashboardActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityAdminDashboardBinding
     private lateinit var auth: FirebaseAuth
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
@@ -40,19 +38,18 @@ class AdminDashboardActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityAdminDashboardBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_admin_dashboard)
 
         // Инициализация Firebase Auth
         auth = FirebaseAuth.getInstance()
 
         // Настройка заголовка
-        setSupportActionBar(binding.toolbar)
+        setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.title = "Decoroom Steel Time"
 
         // Инициализация ViewPager и TabLayout
-        viewPager = binding.viewPager
-        tabLayout = binding.tabLayout
+        viewPager = findViewById(R.id.viewPager)
+        tabLayout = findViewById(R.id.tabLayout)
 
         // Настройка ViewPager с фрагментами
         val pagerAdapter = AdminPagerAdapter(this)
