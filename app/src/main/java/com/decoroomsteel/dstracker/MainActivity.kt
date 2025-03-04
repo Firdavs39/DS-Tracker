@@ -3,8 +3,8 @@ package com.decoroomsteel.dstracker
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.decoroomsteel.dstracker.ui.auth.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
-import ui.auth.LoginActivity
 
 /**
  * Главный экран приложения, который проверяет состояние авторизации
