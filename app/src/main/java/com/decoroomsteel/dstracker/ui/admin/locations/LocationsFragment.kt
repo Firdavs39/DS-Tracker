@@ -11,8 +11,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.decoroomsteel.dstracker.DSTrackerApplication
-import com.decoroomsteel.dstracker.R
 import com.decoroomsteel.dstracker.data.model.WorkLocation
+import com.decoroomsteel.dstracker.databinding.FragmentLocationsBinding
+import com.decoroomsteel.dstracker.databinding.DialogAddLocationBinding
+import com.decoroomsteel.dstracker.databinding.DialogQrCodeBinding
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
@@ -28,7 +30,7 @@ import java.util.UUID
  */
 class LocationsFragment : Fragment() {
 
-    private var _binding: View? = null
+    private var _binding: FragmentLocationsBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var locationsAdapter: LocationsAdapter
@@ -42,8 +44,8 @@ class LocationsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = inflater.inflate(R.layout.fragment_locations, container, false)
-        return binding
+        _binding = FragmentLocationsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -56,7 +58,7 @@ class LocationsFragment : Fragment() {
         loadLocations()
 
         // Обработчик кнопки добавления локации
-        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabAddLocation).setOnClickListener {
+        binding.fabAddLocation.setOnClickListener {
             showAddLocationDialog()
         }
     }
@@ -67,20 +69,20 @@ class LocationsFragment : Fragment() {
             onDeleteClick = { location -> showDeleteLocationDialog(location) }
         )
 
-        view?.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvLocations)?.apply {
+        binding.rvLocations.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = locationsAdapter
         }
     }
 
     private fun loadLocations() {
-        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+        binding.progressBar.visibility = View.VISIBLE
 
         locationRepository.getAllActiveLocations().observe(viewLifecycleOwner, Observer { locations ->
-            view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+            binding.progressBar.visibility = View.GONE
             locationsAdapter.submitList(locations)
 
-            view?.findViewById<android.widget.TextView>(R.id.tvNoLocations)?.visibility = if (locations.isEmpty()) {
+            binding.tvNoLocations.visibility = if (locations.isEmpty()) {
                 View.VISIBLE
             } else {
                 View.GONE
@@ -89,21 +91,16 @@ class LocationsFragment : Fragment() {
     }
 
     private fun showAddLocationDialog() {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_location, null)
-
-        val etName = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etName)
-        val etAddress = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etAddress)
-        val etLatitude = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etLatitude)
-        val etLongitude = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etLongitude)
+        val dialogBinding = DialogAddLocationBinding.inflate(layoutInflater)
 
         AlertDialog.Builder(requireContext())
             .setTitle("Добавить рабочую зону")
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setPositiveButton("Добавить") { _, _ ->
-                val name = etName.text.toString().trim()
-                val address = etAddress.text.toString().trim()
-                val latitude = etLatitude.text.toString().toDoubleOrNull()
-                val longitude = etLongitude.text.toString().toDoubleOrNull()
+                val name = dialogBinding.etName.text.toString().trim()
+                val address = dialogBinding.etAddress.text.toString().trim()
+                val latitude = dialogBinding.etLatitude.text.toString().toDoubleOrNull()
+                val longitude = dialogBinding.etLongitude.text.toString().toDoubleOrNull()
 
                 if (name.isNotEmpty() && address.isNotEmpty() && latitude != null && longitude != null) {
                     addLocation(name, address, latitude, longitude)
@@ -120,7 +117,7 @@ class LocationsFragment : Fragment() {
     }
 
     private fun addLocation(name: String, address: String, latitude: Double, longitude: Double) {
-        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+        binding.progressBar.visibility = View.VISIBLE
 
         // Генерируем уникальный код для QR
         val qrCode = UUID.randomUUID().toString()
@@ -139,7 +136,7 @@ class LocationsFragment : Fragment() {
                 locationRepository.insert(newLocation)
 
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Рабочая зона добавлена",
@@ -148,7 +145,7 @@ class LocationsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Ошибка: ${e.message}",
@@ -174,22 +171,14 @@ class LocationsFragment : Fragment() {
             val bitmap: Bitmap = barcodeEncoder.createBitmap(bitMatrix)
 
             // Создание диалогового окна с QR-кодом
-            val dialogView = LayoutInflater.from(requireContext())
-                .inflate(R.layout.dialog_qr_code, null)
+            val dialogBinding = DialogQrCodeBinding.inflate(layoutInflater)
 
-            val imageView = dialogView.findViewById<android.widget.ImageView>(
-                R.id.iv_qr_code
-            )
-            imageView.setImageBitmap(bitmap)
-
-            val tvLocationName = dialogView.findViewById<android.widget.TextView>(
-                R.id.tv_location_name
-            )
-            tvLocationName.text = location.name
+            dialogBinding.ivQrCode.setImageBitmap(bitmap)
+            dialogBinding.tvLocationName.text = location.name
 
             AlertDialog.Builder(requireContext())
                 .setTitle("QR-код рабочей зоны")
-                .setView(dialogView)
+                .setView(dialogBinding.root)
                 .setPositiveButton("Закрыть", null)
                 .show()
         } catch (e: Exception) {
@@ -213,7 +202,7 @@ class LocationsFragment : Fragment() {
     }
 
     private fun deleteLocation(location: WorkLocation) {
-        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+        binding.progressBar.visibility = View.VISIBLE
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -221,7 +210,7 @@ class LocationsFragment : Fragment() {
                 locationRepository.update(location.copy(active = false))
 
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Рабочая зона удалена",
@@ -230,7 +219,7 @@ class LocationsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Ошибка: ${e.message}",

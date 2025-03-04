@@ -25,6 +25,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 /**
  * Экран работника для отслеживания смен и сканирования QR-кода
@@ -38,6 +39,7 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
     private val userRepository by lazy { (application as DSTrackerApplication).userRepository }
     private val sessionRepository by lazy { (application as DSTrackerApplication).sessionRepository }
+    private val locationRepository by lazy { (application as DSTrackerApplication).locationRepository }
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
@@ -119,7 +121,19 @@ class WorkerDashboardActivity : AppCompatActivity() {
                 val startTimeFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
                 val startTimeText = startTimeFormat.format(session.startTime)
 
-                binding.tvActiveSessionInfo.text = "Смена начата: $startTimeText"
+                // Получение имени локации
+                CoroutineScope(Dispatchers.IO).launch {
+                    val location = locationRepository.getLocationByIdSync(session.locationId)
+
+                    withContext(Dispatchers.Main) {
+                        // Обновляем информацию о текущей смене
+                        updateActiveSessionInfo(
+                            session,
+                            startTimeText,
+                            location?.name ?: "Неизвестная локация"
+                        )
+                    }
+                }
             } else {
                 // Нет активной смены
                 binding.cardActiveSession.visibility = View.GONE
@@ -128,10 +142,34 @@ class WorkerDashboardActivity : AppCompatActivity() {
         })
     }
 
+    private fun updateActiveSessionInfo(session: WorkSession, startTimeText: String, locationName: String) {
+        // Вычисление текущей длительности смены
+        val currentTime = Date()
+        val durationMs = currentTime.time - session.startTime.time
+        val hours = TimeUnit.MILLISECONDS.toHours(durationMs)
+        val minutes = TimeUnit.MILLISECONDS.toMinutes(durationMs) % 60
+
+        val durationText = if (hours > 0) {
+            "$hours ч $minutes мин"
+        } else {
+            "$minutes мин"
+        }
+
+        // Расчет текущего заработка
+        val durationHours = durationMs / (1000.0 * 60.0 * 60.0)
+        val earnings = durationHours * session.hourlyRate
+
+        // Обновление текстовых полей
+        binding.tvSessionStatus.text = "Активная смена"
+        binding.tvSessionDetails.text = "Начало: $startTimeText"
+        binding.tvSessionLocation.text = "Локация: $locationName"
+        binding.tvSessionDuration.text = "Длительность: $durationText"
+    }
+
     private fun loadRecentSessions() {
         val userId = auth.currentUser?.uid ?: return
 
-        // Используем существующий метод вместо недостающего getRecentSessionsForUser
+        // Используем существующий метод getSessionsForUser
         sessionRepository.getSessionsForUser(userId).observe(this, Observer { sessions ->
             // Ограничиваем список 10 последними сессиями
             val recentSessions = sessions.take(10)
@@ -156,10 +194,28 @@ class WorkerDashboardActivity : AppCompatActivity() {
             startQrScanner()
         }
     }
-
     private fun startQrScanner() {
-        val intent = Intent(this, QrScannerActivity::class.java)
-        startActivityForResult(intent, QR_SCANNER_REQUEST_CODE)
+        // Проверяем, есть ли уже активная смена
+        val userId = auth.currentUser?.uid ?: return
+
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val activeSession = sessionRepository.getActiveSessionForUserSync(userId)
+
+                if (activeSession != null) {
+                    // Если есть активная смена, завершаем её
+                    endCurrentSession(activeSession)
+                } else {
+                    // Если нет активной смены, сканируем QR для начала новой
+                    withContext(Dispatchers.Main) {
+                        val intent = Intent(this@WorkerDashboardActivity, QrScannerActivity::class.java)
+                        startActivityForResult(intent, QR_SCANNER_REQUEST_CODE)
+                    }
+                }
+            } catch (e: Exception) {
+                showMessage("Ошибка: ${e.message}")
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -198,48 +254,32 @@ class WorkerDashboardActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Проверка активной смены
-                val activeSession = sessionRepository.getActiveSessionForUserSync(userId)
+                // Получаем локацию по QR-коду
+                val location = locationRepository.getLocationByQrCode(qrCode)
 
-                if (activeSession == null) {
-                    // Начинаем новую смену
-                    startNewSession(userId, qrCode)
-                } else {
-                    // Заканчиваем текущую смену
-                    endCurrentSession(activeSession)
+                if (location == null) {
+                    showMessage("QR-код не соответствует ни одной рабочей зоне")
+                    return@launch
+                }
+
+                // Создаем новую сессию
+                val session = WorkSession(
+                    userId = userId,
+                    locationId = location.id,
+                    startTime = Date(),
+                    hourlyRate = currentUser.hourlyRate
+                )
+
+                sessionRepository.insert(session)
+                showMessage("Смена начата на объекте: ${location.name}")
+
+                withContext(Dispatchers.Main) {
+                    loadActiveSession()
+                    loadRecentSessions()
                 }
             } catch (e: Exception) {
-                showMessage("Ошибка: ${e.message}")
+                showMessage("Ошибка начала смены: ${e.message}")
             }
-        }
-    }
-
-    private suspend fun startNewSession(userId: String, qrCode: String) {
-        try {
-            // Получаем локацию по QR-коду
-            val location = (application as DSTrackerApplication).locationRepository.getLocationByQrCode(qrCode)
-
-            if (location == null) {
-                showMessage("QR-код не соответствует ни одной рабочей зоне")
-                return
-            }
-
-            // Создаем новую сессию
-            val session = WorkSession(
-                userId = userId,
-                locationId = location.id,
-                startTime = Date(),
-                hourlyRate = currentUser.hourlyRate
-            )
-
-            sessionRepository.insert(session)
-            showMessage("Смена начата на объекте: ${location.name}")
-
-            withContext(Dispatchers.Main) {
-                loadActiveSession()
-            }
-        } catch (e: Exception) {
-            showMessage("Ошибка начала смены: ${e.message}")
         }
     }
 

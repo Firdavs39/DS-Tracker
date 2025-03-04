@@ -1,15 +1,15 @@
-package ui.admin.sessions
+package com.decoroomsteel.dstracker.ui.admin.sessions
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.decoroomsteel.dstracker.R
-import com.decoroomsteel.dstracker.model.WorkSession
+import com.decoroomsteel.dstracker.data.model.WorkSession
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

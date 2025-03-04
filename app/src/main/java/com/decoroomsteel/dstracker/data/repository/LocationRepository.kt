@@ -5,63 +5,45 @@ import com.decoroomsteel.dstracker.data.dao.LocationDao
 import com.decoroomsteel.dstracker.data.model.WorkLocation
 
 /**
- * Репозиторий для работы с рабочими зонами
+ * Репозиторий для работы с рабочими локациями
  */
 class LocationRepository(private val locationDao: LocationDao) {
-    
-    /**
-     * Получение локации по ID
-     */
-    fun getLocationById(locationId: Long): LiveData<WorkLocation?> {
-        return locationDao.getLocationById(locationId)
+
+    // Получить все локации
+    val allLocations: LiveData<List<WorkLocation>> = locationDao.getAllLocations()
+
+    // Получить локацию по ID
+    suspend fun getLocationById(locationId: Long): WorkLocation? {
+        return locationDao.getLocationByIdSync(locationId)
     }
-    
-    /**
-     * Получение локации по ID (синхронно)
-     */
+
+    // Получить локацию по ID (синхронно)
     suspend fun getLocationByIdSync(locationId: Long): WorkLocation? {
         return locationDao.getLocationByIdSync(locationId)
     }
-    
-    /**
-     * Получение локации по QR-коду
-     */
+
+    // Получить локацию по QR-коду
     suspend fun getLocationByQrCode(qrCode: String): WorkLocation? {
         return locationDao.getLocationByQrCode(qrCode)
     }
-    
-    /**
-     * Получение всех активных локаций
-     */
-    fun getAllActiveLocations(): LiveData<List<WorkLocation>> {
-        return locationDao.getAllActiveLocations()
-    }
-    
-    /**
-     * Получение всех активных локаций (синхронно)
-     */
-    suspend fun getAllActiveLocationsSync(): List<WorkLocation> {
-        return locationDao.getAllActiveLocationsSync()
-    }
-    
-    /**
-     * Добавление локации
-     */
+
+    // Добавить новую локацию
     suspend fun insert(location: WorkLocation): Long {
         return locationDao.insert(location)
     }
-    
-    /**
-     * Обновление данных локации
-     */
+
+    // Обновить данные локации
     suspend fun update(location: WorkLocation) {
         locationDao.update(location)
     }
-    
-    /**
-     * Проверка существования локации с указанным QR-кодом
-     */
-    suspend fun doesLocationExistWithQrCode(qrCode: String): Boolean {
-        return locationDao.getLocationCountByQrCode(qrCode) > 0
+
+    // Удалить локацию
+    suspend fun delete(location: WorkLocation) {
+        locationDao.delete(location)
+    }
+
+    // Проверить, существует ли локация с таким QR-кодом
+    suspend fun isQrCodeExists(qrCode: String): Boolean {
+        return locationDao.getLocationByQrCode(qrCode) != null
     }
 } 

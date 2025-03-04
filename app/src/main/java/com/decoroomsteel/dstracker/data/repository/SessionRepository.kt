@@ -3,80 +3,67 @@ package com.decoroomsteel.dstracker.data.repository
 import androidx.lifecycle.LiveData
 import com.decoroomsteel.dstracker.data.dao.SessionDao
 import com.decoroomsteel.dstracker.data.model.WorkSession
-import java.util.Date
+import java.util.*
 
 /**
  * Репозиторий для работы с рабочими сменами
  */
 class SessionRepository(private val sessionDao: SessionDao) {
     
-    /**
-     * Получение смены по ID
-     */
-    fun getSessionById(sessionId: Long): LiveData<WorkSession?> {
-        return sessionDao.getSessionById(sessionId)
+    // Получить все сессии
+    val allSessions: LiveData<List<WorkSession>> = sessionDao.getAllSessions()
+    
+    // Получить сессии по ID пользователя
+    fun getSessionsByUserId(userId: String): LiveData<List<WorkSession>> {
+        return sessionDao.getSessionsForUser(userId)
     }
     
-    /**
-     * Получение активной смены пользователя
-     */
-    fun getActiveSessionForUser(userId: String): LiveData<WorkSession?> {
-        return sessionDao.getActiveSessionForUser(userId)
-    }
-    
-    /**
-     * Получение активной смены пользователя (синхронно)
-     */
-    suspend fun getActiveSessionForUserSync(userId: String): WorkSession? {
-        return sessionDao.getActiveSessionForUserSync(userId)
-    }
-    
-    /**
-     * Получение всех активных смен
-     */
-    fun getAllActiveSessions(): LiveData<List<WorkSession>> {
-        return sessionDao.getAllActiveSessions()
-    }
-    
-    /**
-     * Получение всех смен пользователя
-     */
+    // Получить сессии для пользователя
     fun getSessionsForUser(userId: String): LiveData<List<WorkSession>> {
         return sessionDao.getSessionsForUser(userId)
     }
     
-    /**
-     * Получение всех завершенных смен пользователя для указанного периода
-     */
-    suspend fun getSessionsForPeriodByUserSync(userId: String, startDate: Date, endDate: Date): List<WorkSession> {
-        return sessionDao.getSessionsForPeriodByUserSync(userId, startDate, endDate)
+    // Получить смены по ID локации
+    fun getSessionsByLocationId(locationId: Long): LiveData<List<WorkSession>> {
+        return sessionDao.getSessionsByLocationId(locationId)
     }
     
-    /**
-     * Получение всех смен для указанной локации за период
-     */
-    suspend fun getSessionsForPeriodByLocationSync(locationId: Long, startDate: Date, endDate: Date): List<WorkSession> {
-        return sessionDao.getSessionsForPeriodByLocationSync(locationId, startDate, endDate)
+    // Получить активную смену пользователя
+    fun getActiveSessionForUser(userId: String): LiveData<WorkSession?> {
+        return sessionDao.getActiveSessionForUser(userId)
     }
     
-    /**
-     * Получение всех смен за указанный период
-     */
-    suspend fun getSessionsForPeriodSync(startDate: Date, endDate: Date): List<WorkSession> {
+    // Получить активную смену пользователя (синхронно)
+    suspend fun getActiveSessionForUserSync(userId: String): WorkSession? {
+        return sessionDao.getActiveSessionForUserSync(userId)
+    }
+    
+    // Получить смены в указанном диапазоне дат
+    suspend fun getSessionsInDateRange(startDate: Date, endDate: Date): List<WorkSession> {
         return sessionDao.getSessionsForPeriodSync(startDate, endDate)
     }
     
-    /**
-     * Добавление смены
-     */
+    // Начать новую смену
+    suspend fun startSession(session: WorkSession): Long {
+        return sessionDao.insert(session)
+    }
+    
+    // Обновить смену
+    suspend fun update(session: WorkSession) {
+        sessionDao.update(session)
+    }
+    
+    // Вставить новую сессию
     suspend fun insert(session: WorkSession): Long {
         return sessionDao.insert(session)
     }
     
-    /**
-     * Обновление данных смены
-     */
-    suspend fun update(session: WorkSession) {
-        sessionDao.update(session)
+    // Завершить смену
+    suspend fun endSession(sessionId: Long, endTime: Date, endedByAdmin: Boolean = false) {
+        val session = sessionDao.getSessionByIdSync(sessionId)
+        if (session != null) {
+            val updatedSession = session.copy(endTime = endTime, endedByAdmin = endedByAdmin)
+            sessionDao.update(updatedSession)
+        }
     }
 } 

@@ -15,7 +15,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.decoroomsteel.dstracker.DSTrackerApplication
 import com.decoroomsteel.dstracker.databinding.ActivityQrScannerBinding
-import com.decoroomsteel.dstracker.model.WorkLocation
+import com.decoroomsteel.dstracker.data.model.WorkLocation
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.common.util.concurrent.ListenableFuture

@@ -21,6 +21,12 @@ interface SessionDao {
     fun getSessionById(sessionId: Long): LiveData<WorkSession?>
 
     /**
+     * Получение смены по ID (синхронно)
+     */
+    @Query("SELECT * FROM work_sessions WHERE id = :sessionId")
+    suspend fun getSessionByIdSync(sessionId: Long): WorkSession?
+
+    /**
      * Получение активной смены пользователя
      */
     @Query("SELECT * FROM work_sessions WHERE userId = :userId AND endTime IS NULL")
@@ -63,6 +69,12 @@ interface SessionDao {
     suspend fun getSessionsForPeriodSync(startDate: Date, endDate: Date): List<WorkSession>
 
     /**
+     * Получение всех смен для указанной локации
+     */
+    @Query("SELECT * FROM work_sessions WHERE locationId = :locationId ORDER BY startTime DESC")
+    fun getSessionsByLocationId(locationId: Long): LiveData<List<WorkSession>>
+
+    /**
      * Добавление смены
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -73,4 +85,10 @@ interface SessionDao {
      */
     @Update
     suspend fun update(session: WorkSession)
+
+    /**
+     * Получение всех смен
+     */
+    @Query("SELECT * FROM work_sessions ORDER BY startTime DESC")
+    fun getAllSessions(): LiveData<List<WorkSession>>
 } 

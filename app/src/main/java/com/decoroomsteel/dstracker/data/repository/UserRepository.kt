@@ -57,4 +57,30 @@ class UserRepository(private val userDao: UserDao) {
     suspend fun doesUserExistWithEmail(email: String): Boolean {
         return userDao.getUserCountByEmail(email) > 0
     }
+
+    // Получить всех пользователей
+    val allUsers: LiveData<List<User>> = userDao.getAllUsers()
+
+    // Получить всех работников (не админов)
+    val allWorkers: LiveData<List<User>> = userDao.getAllWorkers()
+
+    // Получить пользователя по email
+    suspend fun getUserByEmail(email: String): User? {
+        return userDao.getUserByEmail(email)
+    }
+
+    // Удалить пользователя
+    suspend fun delete(user: User) {
+        userDao.delete(user)
+    }
+
+    // Проверить, существует ли уже пользователь с таким email
+    suspend fun isEmailExists(email: String): Boolean {
+        return userDao.getUserByEmail(email) != null
+    }
+
+    // Проверить, существует ли уже пользователь с таким телефоном
+    suspend fun isPhoneExists(phone: String): Boolean {
+        return userDao.getUserByPhone(phone) != null
+    }
 } 

@@ -13,7 +13,7 @@ import com.decoroomsteel.dstracker.DSTrackerApplication
 import com.decoroomsteel.dstracker.databinding.FragmentEmployeesBinding
 import com.decoroomsteel.dstracker.databinding.DialogAddEmployeeBinding
 import com.decoroomsteel.dstracker.databinding.DialogEditEmployeeBinding
-import com.decoroomsteel.dstracker.model.User
+import com.decoroomsteel.dstracker.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,14 +28,14 @@ class EmployeesFragment : Fragment() {
 
     private var _binding: FragmentEmployeesBinding? = null
     private val binding get() = _binding!!
-    
+
     private lateinit var employeesAdapter: EmployeesAdapter
     private lateinit var auth: FirebaseAuth
-    
-    private val userRepository by lazy { 
-        (requireActivity().application as DSTrackerApplication).userRepository 
+
+    private val userRepository by lazy {
+        (requireActivity().application as DSTrackerApplication).userRepository
     }
-    
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -44,43 +44,43 @@ class EmployeesFragment : Fragment() {
         _binding = FragmentEmployeesBinding.inflate(inflater, container, false)
         return binding.root
     }
-    
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         auth = FirebaseAuth.getInstance()
-        
+
         // Настройка списка сотрудников
         setupRecyclerView()
-        
+
         // Загрузка списка сотрудников
         loadEmployees()
-        
+
         // Обработчик кнопки добавления сотрудника
         binding.fabAddEmployee.setOnClickListener {
             showAddEmployeeDialog()
         }
     }
-    
+
     private fun setupRecyclerView() {
         employeesAdapter = EmployeesAdapter(
             onEditClick = { user -> showEditEmployeeDialog(user) },
             onDeleteClick = { user -> showDeleteEmployeeDialog(user) }
         )
-        
+
         binding.rvEmployees.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = employeesAdapter
         }
     }
-    
+
     private fun loadEmployees() {
         binding.progressBar.visibility = View.VISIBLE
-        
+
         userRepository.getAllActiveUsers().observe(viewLifecycleOwner, Observer { users ->
             binding.progressBar.visibility = View.GONE
             employeesAdapter.submitList(users)
-            
+
             binding.tvNoEmployees.visibility = if (users.isEmpty()) {
                 View.VISIBLE
             } else {
@@ -88,10 +88,10 @@ class EmployeesFragment : Fragment() {
             }
         })
     }
-    
+
     private fun showAddEmployeeDialog() {
         val dialogBinding = DialogAddEmployeeBinding.inflate(layoutInflater)
-        
+
         AlertDialog.Builder(requireContext())
             .setTitle("Добавить сотрудника")
             .setView(dialogBinding.root)
@@ -100,7 +100,7 @@ class EmployeesFragment : Fragment() {
                 val name = dialogBinding.etName.text.toString().trim()
                 val hourlyRate = dialogBinding.etHourlyRate.text.toString().toDoubleOrNull() ?: 0.0
                 val isAdmin = dialogBinding.switchAdmin.isChecked
-                
+
                 if (email.isNotEmpty() && name.isNotEmpty()) {
                     addEmployee(email, name, hourlyRate, isAdmin)
                 } else {
@@ -114,19 +114,19 @@ class EmployeesFragment : Fragment() {
             .setNegativeButton("Отмена", null)
             .show()
     }
-    
+
     private fun addEmployee(email: String, name: String, hourlyRate: Double, isAdmin: Boolean) {
         binding.progressBar.visibility = View.VISIBLE
-        
+
         // Генерируем временный пароль для нового пользователя
         val tempPassword = generateRandomPassword()
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Создание пользователя в Firebase Auth
                 val authResult = auth.createUserWithEmailAndPassword(email, tempPassword).await()
                 val userId = authResult.user?.uid
-                
+
                 if (userId != null) {
                     // Создание пользователя в локальной базе данных
                     val newUser = User(
@@ -136,12 +136,12 @@ class EmployeesFragment : Fragment() {
                         isAdmin = isAdmin,
                         hourlyRate = hourlyRate
                     )
-                    
+
                     userRepository.insert(newUser)
-                    
+
                     // Отправка ссылки для сброса пароля
                     auth.sendPasswordResetEmail(email).await()
-                    
+
                     withContext(Dispatchers.Main) {
                         binding.progressBar.visibility = View.GONE
                         Toast.makeText(
@@ -163,15 +163,15 @@ class EmployeesFragment : Fragment() {
             }
         }
     }
-    
+
     private fun showEditEmployeeDialog(user: User) {
         val dialogBinding = DialogEditEmployeeBinding.inflate(layoutInflater)
-        
+
         // Заполняем поля текущими значениями
         dialogBinding.etName.setText(user.name)
         dialogBinding.etHourlyRate.setText(user.hourlyRate.toString())
         dialogBinding.switchAdmin.isChecked = user.isAdmin
-        
+
         AlertDialog.Builder(requireContext())
             .setTitle("Редактировать сотрудника")
             .setView(dialogBinding.root)
@@ -179,7 +179,7 @@ class EmployeesFragment : Fragment() {
                 val name = dialogBinding.etName.text.toString().trim()
                 val hourlyRate = dialogBinding.etHourlyRate.text.toString().toDoubleOrNull() ?: 0.0
                 val isAdmin = dialogBinding.switchAdmin.isChecked
-                
+
                 if (name.isNotEmpty()) {
                     updateEmployee(user.copy(
                         name = name,
@@ -197,14 +197,14 @@ class EmployeesFragment : Fragment() {
             .setNegativeButton("Отмена", null)
             .show()
     }
-    
+
     private fun updateEmployee(user: User) {
         binding.progressBar.visibility = View.VISIBLE
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 userRepository.update(user)
-                
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     Toast.makeText(
@@ -225,7 +225,7 @@ class EmployeesFragment : Fragment() {
             }
         }
     }
-    
+
     private fun showDeleteEmployeeDialog(user: User) {
         AlertDialog.Builder(requireContext())
             .setTitle("Удалить сотрудника")
@@ -236,15 +236,15 @@ class EmployeesFragment : Fragment() {
             .setNegativeButton("Отмена", null)
             .show()
     }
-    
+
     private fun deleteEmployee(user: User) {
         binding.progressBar.visibility = View.VISIBLE
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Вместо физического удаления помечаем как неактивного
                 userRepository.update(user.copy(active = false))
-                
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     Toast.makeText(
@@ -265,14 +265,14 @@ class EmployeesFragment : Fragment() {
             }
         }
     }
-    
+
     private fun generateRandomPassword(): String {
         val chars = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         return List(12) { chars.random() }.joinToString("")
     }
-    
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
-} 
+}

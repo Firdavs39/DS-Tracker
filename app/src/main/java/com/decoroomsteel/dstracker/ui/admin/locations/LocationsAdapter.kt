@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.decoroomsteel.dstracker.databinding.ItemLocationBinding
-import com.decoroomsteel.dstracker.model.WorkLocation
+import com.decoroomsteel.dstracker.data.model.WorkLocation
 
 /**
  * Адаптер для отображения списка рабочих зон

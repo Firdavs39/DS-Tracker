@@ -44,4 +44,4 @@ data class WorkSession(
     fun isActive(): Boolean {
         return endTime == null
     }
-} 
+}

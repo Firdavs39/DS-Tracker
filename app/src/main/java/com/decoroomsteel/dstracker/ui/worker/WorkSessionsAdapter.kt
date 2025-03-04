@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.decoroomsteel.dstracker.databinding.ItemWorkSessionBinding
-import com.decoroomsteel.dstracker.model.WorkSession
+import com.decoroomsteel.dstracker.data.model.WorkSession
 import java.text.SimpleDateFormat
 import java.util.Locale
 

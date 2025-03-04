@@ -11,10 +11,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.decoroomsteel.dstracker.DSTrackerApplication
-import com.decoroomsteel.dstracker.R
 import com.decoroomsteel.dstracker.data.model.User
 import com.decoroomsteel.dstracker.data.model.WorkLocation
 import com.decoroomsteel.dstracker.data.model.WorkSession
+import com.decoroomsteel.dstracker.databinding.FragmentSessionsBinding
+import com.decoroomsteel.dstracker.databinding.DialogStartSessionBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ import java.util.Date
  */
 class SessionsFragment : Fragment() {
 
-    private var _binding: View? = null
+    private var _binding: FragmentSessionsBinding? = null
     private val binding get() = _binding!!
 
     private lateinit var sessionsAdapter: AdminSessionsAdapter
@@ -48,8 +49,8 @@ class SessionsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = inflater.inflate(R.layout.fragment_sessions, container, false)
-        return binding
+        _binding = FragmentSessionsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -62,7 +63,7 @@ class SessionsFragment : Fragment() {
         loadActiveSessions()
 
         // Обработчик кнопки добавления смены
-        view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fabStartSession).setOnClickListener {
+        binding.fabStartSession.setOnClickListener {
             showStartSessionDialog()
         }
     }
@@ -72,17 +73,17 @@ class SessionsFragment : Fragment() {
             onEndSessionClick = { session -> endSession(session) }
         )
 
-        view?.findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.rvSessions)?.apply {
+        binding.rvSessions.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = sessionsAdapter
         }
     }
 
     private fun loadActiveSessions() {
-        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+        binding.progressBar.visibility = View.VISIBLE
 
         sessionRepository.getAllActiveSessions().observe(viewLifecycleOwner, Observer { sessions ->
-            view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+            binding.progressBar.visibility = View.GONE
 
             // Преобразование WorkSession в AdminSessionItem
             val sessionItems = mutableListOf<AdminSessionItem>()
@@ -104,7 +105,7 @@ class SessionsFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     sessionsAdapter.submitList(sessionItems)
 
-                    view?.findViewById<android.widget.TextView>(R.id.tvNoSessions)?.visibility = if (sessionItems.isEmpty()) {
+                    binding.tvNoSessions.visibility = if (sessionItems.isEmpty()) {
                         View.VISIBLE
                     } else {
                         View.GONE
@@ -115,16 +116,13 @@ class SessionsFragment : Fragment() {
     }
 
     private fun showStartSessionDialog() {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_start_session, null)
+        val dialogBinding = DialogStartSessionBinding.inflate(layoutInflater)
         val dialog = AlertDialog.Builder(requireContext())
             .setTitle("Начать смену сотрудника")
-            .setView(dialogView)
+            .setView(dialogBinding.root)
             .setPositiveButton("Начать", null) // Null, чтобы не закрывать окно при ошибке валидации
             .setNegativeButton("Отмена", null)
             .create()
-
-        val spinnerEmployee = dialogView.findViewById<android.widget.Spinner>(R.id.spinnerEmployee)
-        val spinnerLocation = dialogView.findViewById<android.widget.Spinner>(R.id.spinnerLocation)
 
         // Загрузка списка сотрудников
         CoroutineScope(Dispatchers.IO).launch {
@@ -138,7 +136,7 @@ class SessionsFragment : Fragment() {
                     android.R.layout.simple_dropdown_item_1line,
                     employees.map { it.name }
                 )
-                spinnerEmployee.adapter = employeeAdapter
+                dialogBinding.spinnerEmployee.adapter = employeeAdapter
 
                 // Настройка выпадающего списка локаций
                 val locationAdapter = ArrayAdapter(
@@ -146,13 +144,13 @@ class SessionsFragment : Fragment() {
                     android.R.layout.simple_dropdown_item_1line,
                     locations.map { it.name }
                 )
-                spinnerLocation.adapter = locationAdapter
+                dialogBinding.spinnerLocation.adapter = locationAdapter
 
                 // Настройка обработчика кнопки "Начать"
                 dialog.setOnShowListener {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                        val selectedEmployeePos = spinnerEmployee.selectedItemPosition
-                        val selectedLocationPos = spinnerLocation.selectedItemPosition
+                        val selectedEmployeePos = dialogBinding.spinnerEmployee.selectedItemPosition
+                        val selectedLocationPos = dialogBinding.spinnerLocation.selectedItemPosition
 
                         if (selectedEmployeePos >= 0 && selectedLocationPos >= 0) {
                             val employee = employees[selectedEmployeePos]
@@ -175,7 +173,7 @@ class SessionsFragment : Fragment() {
     }
 
     private fun startSession(employee: User, location: WorkLocation) {
-        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+        binding.progressBar.visibility = View.VISIBLE
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -184,7 +182,7 @@ class SessionsFragment : Fragment() {
 
                 if (activeSession != null) {
                     withContext(Dispatchers.Main) {
-                        view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                        binding.progressBar.visibility = View.GONE
                         Toast.makeText(
                             requireContext(),
                             "У сотрудника уже есть активная смена",
@@ -206,7 +204,7 @@ class SessionsFragment : Fragment() {
                 sessionRepository.insert(session)
 
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Смена начата для сотрудника ${employee.name}",
@@ -215,7 +213,7 @@ class SessionsFragment : Fragment() {
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                    binding.progressBar.visibility = View.GONE
                     Toast.makeText(
                         requireContext(),
                         "Ошибка: ${e.message}",
@@ -231,7 +229,7 @@ class SessionsFragment : Fragment() {
             .setTitle("Завершить смену")
             .setMessage("Вы уверены, что хотите завершить текущую смену этого сотрудника?")
             .setPositiveButton("Завершить") { _, _ ->
-                view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.VISIBLE
+                binding.progressBar.visibility = View.VISIBLE
 
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
@@ -244,7 +242,7 @@ class SessionsFragment : Fragment() {
                         sessionRepository.update(updatedSession)
 
                         withContext(Dispatchers.Main) {
-                            view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                            binding.progressBar.visibility = View.GONE
                             Toast.makeText(
                                 requireContext(),
                                 "Смена завершена",
@@ -253,7 +251,7 @@ class SessionsFragment : Fragment() {
                         }
                     } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
-                            view?.findViewById<android.widget.ProgressBar>(R.id.progressBar)?.visibility = View.GONE
+                            binding.progressBar.visibility = View.GONE
                             Toast.makeText(
                                 requireContext(),
                                 "Ошибка: ${e.message}",
